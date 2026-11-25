@@ -1,37 +1,64 @@
-# Phirse – Waste Management (MERN)
+# Phirse
 
-**M**ongoDB · **E**xpress · **R**eact (Vite) · **N**ode.js
+A small waste pickup booking app. You enter your pincode, see if we serve your area, pick a date and time slot, and book a pickup. I built it to practice the MERN stack on something closer to a real product than a todo list.
 
-## Chalane ke steps
+The UI is React (Vite), the API is Express, and data lives in MongoDB. Pincodes and slots come from the database, so adding a new area doesn't need a code change.
 
-1. MongoDB chalu rakhein (local ya Atlas).
-2. `cp server/.env.example server/.env` aur `MONGO_URI`, `ADMIN_KEY` bharein.
-3. Dependencies: `npm run install:all`
-4. Pincode data daalein: `npm run seed`
-5. Dono ek saath chalayein: `npm run dev`
-   - Website: http://localhost:5173
-   - API: http://localhost:5000/api/health
+## Running it locally
+
+You need Node 18 or newer and a MongoDB instance (local or an Atlas free cluster).
+
+```bash
+cp server/.env.example server/.env   # then fill in MONGO_URI and ADMIN_KEY
+npm run install:all
+npm run seed
+npm run dev
+```
+
+On Windows, use `copy server\.env.example server\.env` for the first line.
+
+The site runs on http://localhost:5173 and the API on http://localhost:5000. If `http://localhost:5000/api/health` returns `{"ok":true}`, the server is up.
+
+`npm run seed` wipes the areas collection and reloads a few sample pincodes (Hoshiarpur, Jalandhar, Ludhiana, Amritsar, Chandigarh, Ambala). Edit `server/seed.js` if you want your own.
 
 ## API
 
-| Method | Route | Kaam |
+| Method | Route | What it does |
 |---|---|---|
-| GET | `/api/areas/check/:pincode` | Pincode par service + slots |
-| GET | `/api/areas` | Active shehar list |
-| POST | `/api/pickups` | Naya pickup book karna |
-| GET | `/api/pickups?status=pending` | Saari bookings (header `x-admin-key`) |
-| PATCH | `/api/pickups/:id` | Status badalna: pending / confirmed / picked / cancelled |
+| GET | `/api/areas/check/:pincode` | Tells you if a pincode is served and which slots are open |
+| GET | `/api/areas` | List of active cities |
+| POST | `/api/pickups` | Books a pickup |
+| GET | `/api/pickups?status=pending` | Lists bookings (admin) |
+| PATCH | `/api/pickups/:id` | Updates status: pending, confirmed, picked or cancelled (admin) |
 
-Admin example:
-```
-curl -H "x-admin-key: <ADMIN_KEY>" http://localhost:5000/api/pickups
-```
+The two admin routes expect an `x-admin-key` header that matches `ADMIN_KEY` in your `.env`:
 
-## Folder structure
-```
-server/  index.js, models/(Area, Pickup), routes/(areas, pickups), seed.js
-client/  src/(App, BookingForm, WasteGuide, api, data, styles)
+```bash
+curl -H "x-admin-key: your-key" http://localhost:5000/api/pickups
 ```
 
-## Aage kya jod sakte hain
-JWT login (customer/admin dashboard), Razorpay payment, SMS (Twilio/MSG91), contact form.
+A pickup can only be booked for tomorrow or later, and the slot has to be one of the slots saved for that pincode.
+
+## Project layout
+
+```
+server/
+  index.js
+  models/      Area, Pickup
+  routes/      areas, pickups
+  seed.js
+client/
+  src/         App, BookingForm, WasteGuide, api, data, styles
+```
+
+Vite proxies `/api` to the server in development, so there's no CORS setup to worry about locally.
+
+## What's missing
+
+- No user accounts. Anyone can book with just a name and phone number.
+- The admin side is only API routes with a shared key. There's no dashboard.
+- No payments or SMS. The plans on the page are display only.
+- No tests yet.
+- The production setup isn't done. For deployment, the client will need the API URL set, since the dev proxy won't exist.
+
+Things I'd add next: login with JWT, an admin page for managing bookings, and SMS confirmations.
